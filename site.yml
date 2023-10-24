@@ -1,25 +1,25 @@
 - hosts: all
   become: true
   pre_tasks:
-  
+
   - name: install updates (CentOS)
     dnf:
       update_only: yes
       update_cache: yes
     when: ansible_distribution == "Centos"
-    
+
   - name: install updates (Ubuntu)
     apt:
       upgrade: dist
       update_cache: yes
     when: ansible_distribution == "Ubuntu"
-    
+
 - hosts: ubuntu
   become: true
   roles:
-    - ubuntu
+    - ubuntu_ela
 
 - hosts: centos
   become: true
   roles:
-    - centos
+    - centos_ela
