@@ -17,9 +17,9 @@
 - hosts: ubuntu
   become: true
   roles:
-    - ubuntu_prm
+    - ubuntu
 
 - hosts: centos
   become: true
   roles:
-    - centos_prm
+    - centos
