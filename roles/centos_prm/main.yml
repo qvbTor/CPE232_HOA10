@@ -1,49 +1,74 @@
-#this is the Prometheus playbook for CentOS
+---
+    - name: Install prerequisites
+      yum:
+        name:
+          - java-1.8.0-openjdk
+          - epel-release
+          - wget
+          - which
+        state: present
+      become: yes
 
-  - name: Prometheus PATH directory
-    file:
-      path: ~/prometheus
-      state: directory
+    - name: Add Elasticsearch RPM repository
+      shell: rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 
+    - name: Add Elasticsearch YUM repository
+      copy:
+        content: |
+          [elasticsearch-7.x]
+          name=Elasticsearch repository for 7.x packages
+          baseurl=https://artifacts.elastic.co/packages/7.x/yum
+          gpgcheck=1
+          gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+          enabled=1
+          autorefresh=1
+          type=rpm-md
+        dest: /etc/yum.repos.d/elasticsearch.repo
+      become: yes
 
-  - name: Creating directory for Prometheus files
-    file:
-      path:
-        - /etc/prometheus
-        - /var/lib/prometheus
-      mode: 0777
-      state: directory
+    - name: Install Elasticsearch
+      yum:
+        name: elasticsearch
+        state: present
+      become: yes
 
-  - name: Install Prometheus (CentOS)
-    unarchive:
-      src: https://github.com/prometheus/prometheus/releases/download/v2.8.1/prometheus-2.8.1.linux-amd64.tar.gz
-      dest: ~/prometheus
-      remote_src: yes
-      mode: 0777
-      owner: root
-      group: root
+    - name: Enable and start Elasticsearch service
+      systemd:
+        name: elasticsearch
+        enabled: yes
+        state: started
+      become: yes
 
-  - name: Configuring Prometheus
-    shell: |
-      cd ~/prometheus/prometheus*
-      cp -r . /usr/local/bin/prometheus
+    - name: Install Kibana
+      yum:
+        name: kibana
+        state: present
+      become: yes
 
-  - name: Prometheus config file duplicate
-    copy:
-      src: prometheus.service
-      dest: /etc/systemd/system
-      mode: 7777
-      owner: root
-      group: root
+    - name: Enable and start Kibana service
+      systemd:
+        name: kibana
+        enabled: yes
+        state: started
+      become: yes
 
-  - name: Prometheus Start/Enable Check
-    service:
-      name: prometheus.service
-      state: restarted
-      enabled: true
+    - name: Install Logstash
+      yum:
+        name: logstash
+        state: present
+      become: yes
 
-  - name: httpd Start/Enable Check
-    service:
-      name: httpd
-      state: restarted
-      enabled: true
+    - name: Enable and start Logstash service
+      systemd:
+        name: logstash
+        enabled: yes
+        state: started
+      become: yes
+      
+    - name: Restart Elasticsearch and Kibana
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - elasticsearch
+        - kibana
